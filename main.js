@@ -64,22 +64,12 @@ const showAlert = (text) => {
   `;
 }
 
-const addRect = (config) => {
-  const rect = new fabric.Rect(config);
-  fCanvas.add(rect);
-}
-
-const addCircle = (config) => {
-  const circle = new fabric.Circle(config);
-  fCanvas.add(circle);
-}
-
 const addBox = (condition, color=null) => {
   // convert box to fabric
   const [xMin, xMax, yMin, yMax] = condition.box;
   const boxWidth = (xMax - xMin) * imgWidth;
   const boxHeight = (yMax - yMin) * imgHeight;
-  addRect({
+  const rect = new fabric.Rect({
     top: (yMin * imgHeight ) + xrayImage.top,
     left: (xMin * imgWidth) + xrayImage.left,
     width: boxWidth,
@@ -87,21 +77,37 @@ const addBox = (condition, color=null) => {
     stroke: color || 'red',
     fill: 'transparent',
     metadata: condition
-  })
+  });
+  fCanvas.add(rect);
 }
 
 const addTooth = (tooth) => {
   const [xMin, xMax, yMin, yMax] = tooth.box;
   const left = (xMin + xMax) * imgWidth / 2;
   const top = (yMin + yMax) * imgHeight / 2;
-  addCircle({
+
+  const circle = new fabric.Circle({
     top: top - toothButtonRadius + xrayImage.top,
     left: left - toothButtonRadius + xrayImage.left,
     radius: toothButtonRadius,
     stroke: 'black',
     fill: 'white',
+  });
+
+  const label = new fabric.Text(tooth.label, {
+    top: top + xrayImage.top,
+    left: left + xrayImage.left,
+    fontSize: 15,
+    textAlign: 'center',
+    originX: 'center',
+    originY: 'center',
+    selectable: false,
+  });
+
+  const toothGroup = new fabric.Group([circle, label], {
     metadata: tooth
-  })
+  });
+  fCanvas.add(toothGroup);
 }
 
 
