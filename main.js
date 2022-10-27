@@ -108,6 +108,8 @@ const addBox = (condition, color=null) => {
     hoverCursor: "pointer",
     metadata: condition,
   });
+
+  rect.setControlsVisibility({mtr: false}) // remove rotation point
   fCanvas.add(rect);
 }
 
@@ -138,6 +140,7 @@ const addTooth = (tooth) => {
     hoverCursor: "pointer",
     metadata: tooth,
   });
+  toothGroup.setControlsVisibility({mtr: false}) // remove rotation point
   fCanvas.add(toothGroup);
 }
 
