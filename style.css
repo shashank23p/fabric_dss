@@ -1,4 +1,4 @@
-body{
+body {
   background-color: black;
   padding: 0;
   margin: 0;
@@ -8,6 +8,27 @@ body{
   justify-content: center;
 }
 
-canvas{
+canvas {
   border: white 1px solid;
 }
+
+.alertDiv {
+  position: absolute;
+  top: 30px;
+  right: 30px;
+}
+
+.alert {
+  background-color: green;
+  color: white;
+  padding: 20px;
+  border-radius: 10px;
+  animation: fadeOut 2s linear;
+  opacity: 0;
+}
+
+@keyframes fadeOut {
+  0% {opacity: 1;}
+  50% {opacity: 1;}
+  100% {opacity: 0;} 
+} 

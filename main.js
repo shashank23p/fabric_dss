@@ -20,6 +20,18 @@ fCanvas.on('mouse:wheel', function(opt) {
   opt.e.stopPropagation();
 });
 
+fCanvas.on('mouse:down', function(event) {
+  const { target } = event;
+  if(!target.metadata) return
+  if(target.metadata.type==="tooth"){
+    showAlert("Tooth:" + target.metadata.label);
+  }
+  if(target.metadata.type==="condition"){
+    showAlert("Condition:" + target.metadata.label);
+  }
+   
+});
+
 fabric.Image.fromURL('img/test2.jpeg', (fImg) => {
   xrayImage = fImg;
   fImg.scaleToHeight(height);
@@ -35,13 +47,22 @@ fabric.Image.fromURL('img/test2.jpeg', (fImg) => {
 
   // adding predictions on image
   prediction.conditions.forEach(condition => {
-    addBox(condition.box);
+    addBox(condition);
   });
 
   prediction.tooth.forEach(tooth => {
-    addTooth(tooth.box);
+    addTooth(tooth);
   });
 });
+
+const showAlert = (text) => {
+  const alertDiv = document.getElementById("alert");
+  alertDiv.innerHTML = `
+    <div class="alert">
+      ${text}
+    </div>
+  `;
+}
 
 const addRect = (config) => {
   const rect = new fabric.Rect(config);
@@ -53,9 +74,9 @@ const addCircle = (config) => {
   fCanvas.add(circle);
 }
 
-const addBox = (box, color=null) => {
+const addBox = (condition, color=null) => {
   // convert box to fabric
-  const [xMin, xMax, yMin, yMax] = box;
+  const [xMin, xMax, yMin, yMax] = condition.box;
   const boxWidth = (xMax - xMin) * imgWidth;
   const boxHeight = (yMax - yMin) * imgHeight;
   addRect({
@@ -64,13 +85,13 @@ const addBox = (box, color=null) => {
     width: boxWidth,
     height: boxHeight,
     stroke: color || 'red',
-    fill: 'transparent'
+    fill: 'transparent',
+    metadata: condition
   })
 }
 
 const addTooth = (tooth) => {
-  
-  const [xMin, xMax, yMin, yMax] = tooth;
+  const [xMin, xMax, yMin, yMax] = tooth.box;
   const left = (xMin + xMax) * imgWidth / 2;
   const top = (yMin + yMax) * imgHeight / 2;
   addCircle({
@@ -78,8 +99,11 @@ const addTooth = (tooth) => {
     left: left - toothButtonRadius + xrayImage.left,
     radius: toothButtonRadius,
     stroke: 'black',
-    fill: 'white'
+    fill: 'white',
+    metadata: tooth
   })
 }
+
+
 
 
