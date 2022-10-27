@@ -1,9 +1,12 @@
 import prediction from "./data.js";
 
+const tooltipDiv = document.getElementById("tooltipDiv");
+
 const [width, height] = [600, 600];
 const toothButtonRadius = 20;
 let imgWidth = 1;
 let imgHeight = 1;
+
 const fCanvas = new fabric.Canvas('canvas');
 let xrayImage = null;
 fCanvas.setHeight(height);
@@ -22,14 +25,39 @@ fCanvas.on('mouse:wheel', function(opt) {
 
 fCanvas.on('mouse:down', function(event) {
   const { target } = event;
-  if(!target.metadata) return
+  if(!target?.metadata) return
   if(target.metadata.type==="tooth"){
     showAlert("Tooth:" + target.metadata.label);
   }
   if(target.metadata.type==="condition"){
     showAlert("Condition:" + target.metadata.label);
   }
-   
+});
+
+// this will keep moving parent div of tooltip with mouse
+fCanvas.on('mouse:move', function(event) {
+  tooltipDiv.style.top = event.e.clientY + 20 + "px";
+  tooltipDiv.style.left = event.e.clientX - 20 + "px";
+});
+
+// if we hover over condition show tooltip
+fCanvas.on('mouse:over', function(event) {
+  const { target } = event;
+  if(!target?.metadata) return
+  if(target.metadata.type==="condition"){
+    tooltipDiv.innerHTML=`
+      <div class="tooltip">${target.metadata.label}</div>
+    `
+  }
+});
+
+// if we hove out of condition remove tooltip
+fCanvas.on('mouse:out', function(event) {
+  const { target } = event;
+  if(!target?.metadata) return
+  if(target.metadata.type==="condition"){
+    tooltipDiv.querySelectorAll('.tooltip').forEach(e => e.remove());
+  }
 });
 
 fabric.Image.fromURL('img/test2.jpeg', (fImg) => {
@@ -38,6 +66,7 @@ fabric.Image.fromURL('img/test2.jpeg', (fImg) => {
   fImg.scaleToWidth(width);
   fImg.selectable = false;
   fImg.erasable = false;
+  fImg.hoverCursor = "default",
   imgWidth = fImg.getScaledWidth(),
   imgHeight = fImg.getScaledHeight(),
   fCanvas.centerObject(fImg);
@@ -76,7 +105,8 @@ const addBox = (condition, color=null) => {
     height: boxHeight,
     stroke: color || 'red',
     fill: 'transparent',
-    metadata: condition
+    hoverCursor: "pointer",
+    metadata: condition,
   });
   fCanvas.add(rect);
 }
@@ -105,7 +135,8 @@ const addTooth = (tooth) => {
   });
 
   const toothGroup = new fabric.Group([circle, label], {
-    metadata: tooth
+    hoverCursor: "pointer",
+    metadata: tooth,
   });
   fCanvas.add(toothGroup);
 }
