@@ -27,6 +27,10 @@ canvas {
   opacity: 0;
 }
 
+.alert-warn {
+  background-color: red;
+}
+
 @keyframes fadeOut {
   0% {opacity: 1;}
   50% {opacity: 1;}
