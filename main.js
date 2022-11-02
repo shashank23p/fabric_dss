@@ -2,7 +2,7 @@ import prediction from "./data.js";
 
 const conditionToAdd = {
   type: 'condition',
-  prediction_id: "22a",
+  prediction_id: "placeHolderId",
   confidence: 1,
   manuallyAdded: true,
 };
