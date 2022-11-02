@@ -1,8 +1,9 @@
-body {
+body{
   background-color: black;
-  padding: 0;
+  padding: 10px;
   margin: 0;
-  height: 100vh;
+}
+.canvasDiv {
   display: flex;
   align-items: center;
   justify-content: center;

@@ -1,6 +1,16 @@
 import prediction from "./data.js";
 
+const conditionToAdd = {
+  type: 'condition',
+  prediction_id: "22a",
+  confidence: 1,
+  manuallyAdded: true,
+};
+
 const tooltipDiv = document.getElementById("tooltipDiv");
+const addConditionButton = document.getElementById("addConditionButton");
+const conditionInput = document.getElementById("conditionInput");
+const toothInput = document.getElementById("toothInput");
 
 const [width, height] = [600, 600];
 const toothButtonRadius = 20;
@@ -15,13 +25,22 @@ const controlsVisibility = {
   tl: false,
   tr: false,
   mtr: false,
+  saveCondition: false,
 }
 
 const crossImg = document.createElement('img');
 crossImg.src = './img/cross-mark.png';
+const checkImg = document.createElement('img');
+checkImg.src = './img/check.png';
 
 let imgWidth = 1;
 let imgHeight = 1;
+
+let isDragging = false;
+let dragStartX = 0;
+let dragStartY = 0;
+let currentlyDraggedRect = null;
+let isAddingCondition = false;
 
 
 const fCanvas = new fabric.Canvas('canvas', {selection: false});
@@ -42,21 +61,63 @@ fCanvas.on('mouse:wheel', function(opt) {
 });
 
 fCanvas.on('mouse:down', (event) => {
-  const { target } = event;
-  if(!target?.metadata) return
-  if(target.metadata.type==="tooth"){
-    showAlert("Tooth:" + target.metadata.label);
-  }
-  if(target.metadata.type==="condition"){
-    showAlert("Condition:" + target.metadata.label);
-  }
+  const mousePointer = fCanvas.getPointer(event.e);
+  if(!isAddingCondition) return;
+  isDragging = true;
+  dragStartX = mousePointer.x;
+  dragStartY = mousePointer.y;
+  currentlyDraggedRect = new fabric.Rect({ 
+    width: 0, 
+    height: 0, 
+    left: dragStartX, 
+    top: dragStartY, 
+    originX: 'left',
+    originY: 'top',
+    // strokeDashArray: [5, 5],
+    fill: 'transparent',
+    hasBorders: false,
+    stroke: 'blue',
+  });
+  fCanvas.add(currentlyDraggedRect);
+  
 });
 
 // this will keep moving parent div of tooltip with mouse
 fCanvas.on('mouse:move', (event) => {
   tooltipDiv.style.top = event.e.clientY + 20 + "px";
   tooltipDiv.style.left = event.e.clientX - 20 + "px";
+
+  if(isDragging && currentlyDraggedRect) {
+    const pointer = fCanvas.getPointer(event.e);
+
+    if(dragStartX > pointer.x){
+      currentlyDraggedRect.set({ left: Math.abs(pointer.x) });
+    }
+    if(dragStartY > pointer.y){
+      currentlyDraggedRect.set({ top: Math.abs(pointer.y) });
+    }
+
+    currentlyDraggedRect.set({ width: Math.abs(dragStartX - pointer.x) });
+    currentlyDraggedRect.set({ height: Math.abs(dragStartY - pointer.y) });
+    fCanvas.renderAll();
+  }
 });
+
+fCanvas.on('mouse:up', (event) => {
+  if(!isDragging) return;
+  isDragging = false;
+  const width = currentlyDraggedRect.width;
+  const height = currentlyDraggedRect.height;
+  if(width < 5 || height < 5){
+    // rect is too small deleting it
+    return fCanvas.remove(currentlyDraggedRect);
+  }
+  cancelAddCondition();
+  currentlyDraggedRect.setControlsVisibility({mtr: false, saveCondition: true});
+  fCanvas.setActiveObject(currentlyDraggedRect);
+  fCanvas.renderAll();
+});
+
 
 // if we hover over condition show tooltip
 fCanvas.on('mouse:over', (event) => {
@@ -88,25 +149,28 @@ fCanvas.on('selection:updated', (event) => {
 
 const updateSelection = (event) => {
   event.selected?.forEach(item=>{
-    if(item.metadata.type==="tooth"){
+    if(item?.metadata?.type==="tooth"){
+      showAlert("Tooth:" + item.metadata.label);
       item._objects.forEach(object=>{
         if(!object.text) object.set('fill', '#e3ff00');
       })
-    } else if(item.metadata.type==="condition"){
+    } else if(item?.metadata?.type==="condition"){
+      showAlert("Condition:" + item.metadata.label);
       item.set('stroke', '#e3ff00');
     }
   })
 
   event.deselected?.forEach(item=>{
-    if(item.metadata.type==="tooth"){
+    if(item?.metadata?.type==="tooth"){
       item._objects.forEach(object=>{
         if(!object.text) object.set('fill', 'white');
       })
-    } else if(item.metadata.type==="condition"){
+    } else if(item?.metadata?.type==="condition"){
       item.set('stroke', 'red');
     }
   })
 }
+
 // events end
 
 // delete control
@@ -120,6 +184,30 @@ const deleteObject = (eventData, transform) => {
   }
   fCanvas.remove(target);
   tooltipDiv.querySelectorAll('.tooltip').forEach(e => e.remove()); // remove tooltip if any
+}
+
+const saveCondition = (eventData, transform) => {
+  
+
+  const condition = {...conditionToAdd};
+  if((!conditionInput.value || !toothInput.value) && !isAddingCondition) {
+    return showAlert("Please add Condition and Tooth", "alert-warn");
+  }
+
+  condition.label = conditionInput.value;
+  condition.tooth = toothInput.value;
+
+  const target = transform.target;
+  const {top, left, width, height} = target;
+  const yMin = (top - xrayImage.top) / imgHeight;
+  const xMin = (left - xrayImage.left) / imgWidth;
+  const xMax = (width / imgWidth) + xMin;
+  const yMax = (height / imgHeight) + yMin;
+  condition.box = [xMin, xMax, yMin, yMax];
+
+  console.log(JSON.stringify(condition));
+  fCanvas.remove(target);
+  addBox(condition)
 }
 
 const renderIcon = (icon) => {
@@ -139,6 +227,16 @@ fabric.Object.prototype.controls.delete = new fabric.Control({
   cursorStyle: 'pointer',
   mouseUpHandler: deleteObject,
   render: renderIcon(crossImg),
+  cornerSize: 24
+});
+
+fabric.Object.prototype.controls.saveCondition = new fabric.Control({
+  x: 0,
+  y: 0.5,
+  offsetY: 24,
+  cursorStyle: 'pointer',
+  mouseUpHandler: saveCondition,
+  render: renderIcon(checkImg),
   cornerSize: 24
 });
 
@@ -234,6 +332,26 @@ const addTooth = (tooth) => {
   fCanvas.add(toothGroup);
 }
 
+
+// ui
+window.addCondition = (value = null) => {
+  if(value !== null){
+    isAddingCondition = value;
+  } else {
+    isAddingCondition = !isAddingCondition;
+  }
+  if(isAddingCondition) {
+    addConditionButton.style.background = "green";
+    addConditionButton.style.color = "white";
+  } else {
+    addConditionButton.style.background = "white";
+    addConditionButton.style.color = "black";
+  }
+}
+
+const cancelAddCondition = () => {
+  addCondition(false);
+}
 
 
 

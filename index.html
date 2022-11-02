@@ -8,10 +8,17 @@
     <link rel="stylesheet" href="style.css">
   </head>
   <body>
-    <canvas width="600" height="600" id="canvas"></canvas>
+    
+    <button id="addConditionButton" onclick="addCondition()">Add Condition</button><br><br>
+
+    <input id="conditionInput" placeholder="Condition" /><br>
+    <input id="toothInput" placeholder="Teeth" />
+    
+    <div class="canvasDiv">
+      <canvas width="600" height="600" id="canvas"></canvas>
+    </div>
     <div class="alertDiv" id="alert"></div>
     <div id="tooltipDiv"></div>
     <script type="module" src="main.js" defer></script>
-
   </body>
 </html>
